@@ -1,4 +1,5 @@
 import type { Preview } from '@storybook/nextjs-vite'
+import "../src/app/globals.css" // tailwind を使えるようにする (https://zenn.dev/masatotezuka/articles/strorybook_nextjs_beginner#%E7%92%B0%E5%A2%83%E6%A7%8B%E7%AF%89)
 
 const preview: Preview = {
   parameters: {
