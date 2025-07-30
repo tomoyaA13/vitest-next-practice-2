@@ -403,14 +403,14 @@ export const KeyboardNavigation: Story = {
          */
         // パスワードフィールドにフォーカスが移動したことを確認
         const passwordInput = canvas.getByLabelText('パスワード');
-        expect(passwordInput).toHaveFocus();
+        await expect(passwordInput).toHaveFocus();
 
         // もう一度タブキーで送信ボタンに移動
         await userEvent.tab();
 
         // 送信ボタンにフォーカスが移動したことを確認
         const submitButton = canvas.getByRole('button', { name: 'ログイン' });
-        expect(submitButton).toHaveFocus();
+        await expect(submitButton).toHaveFocus();
     },
 };
 
@@ -480,8 +480,8 @@ export const CopyPasteScenario: Story = {
          * - フォーム要素の値が期待通りかを検証
          */
         // 値が正しく入力されたことを確認
-        expect(emailInput).toHaveValue('pasted.email@example.com');
-        expect(passwordInput).toHaveValue('PastedPassword123!');
+        await expect(emailInput).toHaveValue('pasted.email@example.com');
+        await expect(passwordInput).toHaveValue('PastedPassword123!');
     },
 };
 
