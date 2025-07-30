@@ -37,11 +37,11 @@
  *
  * 6. 【play関数での型安全性】
  *    ```typescript
- *    play: async ({ canvasElement, args }) => { ... }
+ *    play: async ({ canvas, args, userEvent }) => { ... }
  *    ```
- *    - canvasElementはHTMLElement型として推論されます
+ *    - canvasは既にwithin()でラップされたオブジェクトとして提供されます
+ *    - userEventも引数として提供されます
  *    - argsはLoginFormのprops型を含み、args.onSubmitの型も正確です
- *    - within()、userEvent、expectなどの関数も型付けされています
  *
  * 7. 【モック関数の型情報】
  *    ```typescript
@@ -56,8 +56,6 @@
 /**
  * @storybook/testからインポートする関数の説明：
  *
- * - within: 特定の要素内で要素を検索するスコープを作成
- * - userEvent: ユーザーの操作（クリック、入力など）をシミュレート
  * - expect: テストのアサーション（期待値の確認）を行う
  * - waitFor: 非同期処理が完了するまで待機
  * - fn: モック関数（Spy）を作成する
@@ -65,7 +63,7 @@
 
 
 import {LoginForm} from "@/components/form/login-form";
-import {fn, userEvent, waitFor, within, expect} from "storybook/test";
+import {fn, waitFor, expect} from "storybook/test";
 import {Meta, StoryObj} from "@storybook/nextjs-vite";
 
 /**
@@ -170,26 +168,14 @@ export const FilledForm: Story = {
     /**
      * play関数の引数について：
      *
-     * @param canvasElement - ストーリーがレンダリングされるDOM要素
-     *                       これは実際のHTMLElement（div要素）です
+     * @param canvas - within()でラップされたストーリーのスコープ
+     *                これにより、このストーリー内の要素のみを検索します
      * @param args - このストーリーに渡されたすべてのargs
-     *               この例では、onSubmit関数が含まれています
+     *              この例では、onSubmit関数が含まれています
+     * @param userEvent - ユーザーインタラクションをシミュレートするためのユーティリティ
      * @param step - ステップごとにテストを整理するための関数（オプション）
      */
-    play: async ({ canvasElement, args }) => {
-        /**
-         * within関数について：
-         *
-         * within()は、Testing Libraryが提供する関数で、
-         * 特定の要素内で要素を検索するためのスコープを作成します。
-         *
-         * なぜ必要？
-         * - グローバルなdocument全体ではなく、このストーリーの範囲内だけで検索
-         * - 他のストーリーやコンポーネントとの干渉を防ぐ
-         * - より効率的で正確な要素の検索
-         */
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, args, userEvent }) => {
         /**
          * 要素の取得方法について：
          *
@@ -270,9 +256,7 @@ export const FilledForm: Story = {
  * react-hook-formのmode: 'onChange'により、入力中にリアルタイムでバリデーションが実行されます。
  */
 export const ValidationErrors: Story = {
-    play: async ({ canvasElement }) => {
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, userEvent }) => {
         // ステップ1: 無効なメールアドレスを入力
         const emailInput = canvas.getByLabelText('メールアドレス');
         await userEvent.type(emailInput, 'invalid-email');
@@ -317,9 +301,7 @@ export const ValidationErrors: Story = {
  * フォームの送信ボタンをクリックすると、未入力フィールドのエラーが表示されます。
  */
 export const PartiallyFilled: Story = {
-    play: async ({ canvasElement }) => {
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, userEvent }) => {
         // メールアドレスのみ入力
         const emailInput = canvas.getByLabelText('メールアドレス');
         await userEvent.type(emailInput, 'user@example.com');
@@ -342,9 +324,7 @@ export const PartiallyFilled: Story = {
  * リアルタイムバリデーションにより、エラーが即座に消えることを確認できます。
  */
 export const CorrectingErrors: Story = {
-    play: async ({ canvasElement }) => {
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, userEvent }) => {
         // ステップ1: 無効な値を入力
         const emailInput = canvas.getByLabelText('メールアドレス');
         await userEvent.type(emailInput, 'invalid');
@@ -378,33 +358,26 @@ export const CorrectingErrors: Story = {
 };
 
 /**
- * SlowTyping: ゆっくりとした入力
+ * SlowTyping: フォーム入力のデモンストレーション
  *
- * 実際のユーザーの入力速度をシミュレートします。
- * delay オプションを使用して、より現実的な入力を再現します。
+ * フォームにテキストを入力する動作を表示します。
+ * 注: 現在のバージョンではdelayオプションがサポートされていないため、
+ * 通常の速度で入力されます。将来的にdelayオプションがサポートされた場合は、
+ * よりリアルな入力速度を再現できるようになります。
  */
 export const SlowTyping: Story = {
-    play: async ({ canvasElement }) => {
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, userEvent }) => {
         const emailInput = canvas.getByLabelText('メールアドレス');
         const passwordInput = canvas.getByLabelText('パスワード');
 
         /**
-         * userEvent.typeのdelayオプション:
-         * - 各文字の入力間に遅延を追加
-         * - 実際のタイピング速度を再現
-         * - アニメーションやリアルタイムバリデーションの確認に有用
+         * 将来的にdelayオプションがサポートされた場合:
+         * await userEvent.type(emailInput, 'slow.typing@example.com', { delay: 100 });
+         * 
+         * 現在は通常の速度で入力されます。
          */
-        // ゆっくりとメールアドレスを入力（各文字間に100msの遅延）
-        await userEvent.type(emailInput, 'slow.typing@example.com', {
-            delay: 100,
-        });
-
-        // ゆっくりとパスワードを入力
-        await userEvent.type(passwordInput, 'mypassword123', {
-            delay: 100,
-        });
+        await userEvent.type(emailInput, 'slow.typing@example.com');
+        await userEvent.type(passwordInput, 'mypassword123');
     },
 };
 
@@ -415,9 +388,7 @@ export const SlowTyping: Story = {
  * アクセシビリティの観点から重要なテストです。
  */
 export const KeyboardNavigation: Story = {
-    play: async ({ canvasElement }) => {
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, userEvent }) => {
         // 最初のフィールドにフォーカス
         const emailInput = canvas.getByLabelText('メールアドレス');
         await userEvent.click(emailInput);
@@ -430,7 +401,7 @@ export const KeyboardNavigation: Story = {
          * - 要素がフォーカスを持っていることを確認
          * - キーボードナビゲーションのテストに重要
          */
-            // パスワードフィールドにフォーカスが移動したことを確認
+        // パスワードフィールドにフォーカスが移動したことを確認
         const passwordInput = canvas.getByLabelText('パスワード');
         expect(passwordInput).toHaveFocus();
 
@@ -450,9 +421,7 @@ export const KeyboardNavigation: Story = {
  * 一般的なUXパターンのテストです。
  */
 export const SubmitWithEnter: Story = {
-    play: async ({ canvasElement, args }) => {
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, args, userEvent }) => {
         // フォームに値を入力
         const emailInput = canvas.getByLabelText('メールアドレス');
         const passwordInput = canvas.getByLabelText('パスワード');
@@ -487,9 +456,7 @@ export const SubmitWithEnter: Story = {
  * パスワードマネージャーを使用するユーザーの動作を再現します。
  */
 export const CopyPasteScenario: Story = {
-    play: async ({ canvasElement }) => {
-        const canvas = within(canvasElement);
-
+    play: async ({ canvas, userEvent }) => {
         const emailInput = canvas.getByLabelText('メールアドレス');
         const passwordInput = canvas.getByLabelText('パスワード');
 
