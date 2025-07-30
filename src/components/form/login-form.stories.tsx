@@ -358,14 +358,14 @@ export const CorrectingErrors: Story = {
 };
 
 /**
- * SlowTyping: フォーム入力のデモンストレーション
+ * FormInputDemo: フォーム入力のデモンストレーション
  *
  * フォームにテキストを入力する動作を表示します。
  * 注: 現在のバージョンではdelayオプションがサポートされていないため、
  * 通常の速度で入力されます。将来的にdelayオプションがサポートされた場合は、
  * よりリアルな入力速度を再現できるようになります。
  */
-export const SlowTyping: Story = {
+export const FormInputDemo: Story = {
     play: async ({ canvas, userEvent }) => {
         const emailInput = canvas.getByLabelText('メールアドレス');
         const passwordInput = canvas.getByLabelText('パスワード');
@@ -373,10 +373,10 @@ export const SlowTyping: Story = {
         /**
          * 将来的にdelayオプションがサポートされた場合:
          * await userEvent.type(emailInput, 'slow.typing@example.com', { delay: 100 });
-         * 
+         *
          * 現在は通常の速度で入力されます。
          */
-        await userEvent.type(emailInput, 'slow.typing@example.com');
+        await userEvent.type(emailInput, 'typing@example.com');
         await userEvent.type(passwordInput, 'mypassword123');
     },
 };
