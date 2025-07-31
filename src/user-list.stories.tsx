@@ -1,34 +1,8 @@
-/**
- * 非同期処理を含むコンポーネントのStorybookファイル
- *
- * このファイルでは、APIからデータを取得するコンポーネントのストーリーを
- * MSW（Mock Service Worker）を使って作成する方法を説明します。
- *
- * ■ MSWとは？
- * MSW（Mock Service Worker）は、Service Workerを使ってネットワークリクエストを
- * インターセプト（横取り）し、モックレスポンスを返すライブラリです。
- * これにより、実際のAPIサーバーがなくても、APIとの通信をシミュレートできます。
- *
- * ■ なぜ既存のハンドラーを再利用するのか？
- * - コードの重複を避ける（DRY原則）
- * - テストとStorybookで同じモックデータを使用することで一貫性を保つ
- * - ハンドラーの変更が必要な場合、一箇所（handlers.ts）を修正するだけで済む
- * - チーム全体で同じモックデータを共有できる
- *
- * https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-network-requests
- */
-
 import {Meta, StoryObj} from "@storybook/nextjs-vite";
 import {delay, http, HttpResponse} from 'msw';
 import {UserList} from "@/components/user-list";
 import {errorHandlers, handlers as defaultHandlers, mockUsers, specialHandlers} from '../src/mocks/handlers'
 
-/**
- * ■ Metaオブジェクトの設定
- *
- * Metaオブジェクトは、このストーリーファイル全体に適用される設定を定義します。
- * ここで設定した内容は、すべての個別ストーリーに継承されます。
- */
 const meta = {
     title: 'components/user-list',
     component: UserList,
@@ -41,11 +15,10 @@ const meta = {
         },
     },
     tags: ['autodocs'],
-    // デコレーターでコンポーネントを幅制限のあるコンテナで囲む
-    // これにより、実際の使用環境に近い表示を確認できる
+    // Tailwind CSSクラスを使用したデコレーター
     decorators: [
         (Story) => (
-            <div style={{maxWidth: '600px', margin: '0 auto'}}>
+            <div className="max-w-2xl mx-auto p-4">
                 <Story/>
             </div>
         ),
@@ -55,26 +28,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/**
- * ■ 各ストーリーの説明
- *
- * 以下、各ストーリーでどのハンドラーが使用され、
- * どのような動作をシミュレートしているかを説明します。
- */
-
-/**
- * Default: 成功時のストーリー
- *
- * ■ 使用ハンドラー: defaultHandlers（handlers.tsからインポート）
- * ■ 返されるデータ: mockUsers（山田太郎、鈴木花子）
- * ■ HTTPステータス: 200 OK
- *
- * これは最も基本的なケースで、APIが正常に動作し、
- * ユーザーリストが取得できる場合をシミュレートします。
- */
-
-
-
+// 基本的なストーリー
 export const Default: Story = {
     parameters: {
         docs: {
@@ -88,17 +42,7 @@ export const Default: Story = {
     },
 };
 
-/**
- * Loading: ローディング状態のストーリー
- *
- * ■ 使用ハンドラー: インラインで定義（特殊なケースのため）
- * ■ 動作: 無限に遅延させることでローディング状態を維持
- *
- * ■ なぜインラインで定義するのか？
- * このハンドラーは「永遠にレスポンスを返さない」という特殊な動作をします。
- * 実際のアプリケーションでは使用しないため、handlers.tsには含めず、
- * Storybook専用のハンドラーとしてインラインで定義しています。
- */
+// ローディング状態
 export const Loading: Story = {
     parameters: {
         docs: {
@@ -108,10 +52,7 @@ export const Loading: Story = {
         },
         msw: {
             handlers: [
-                // 注: このケースは特殊なので、インラインで定義
                 http.get('/api/users', async () => {
-                    // delay('infinite')により、永遠にレスポンスを返さない
-                    // これにより、コンポーネントのローディング状態を確認できる
                     await delay('infinite');
                     return HttpResponse.json(mockUsers);
                 }),
@@ -120,40 +61,7 @@ export const Loading: Story = {
     },
 };
 
-
-/**
- * LoadingWithDelay: 遅延を含む実際的なローディング
- *
- * ■ 使用ハンドラー: specialHandlers.delayedResponse
- * ■ 返されるデータ: mswMockUsers（佐藤次郎、田中美咲、高橋健一）
- * ■ 遅延時間: 1秒
- *
- * 実際のAPIは即座にレスポンスを返さないことが多いため、
- * 1秒の遅延を含むハンドラーで実際の使用感を確認できます。
- */
-export const LoadingWithDelay: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '1秒の遅延後にデータを表示（実際のAPIの挙動を再現）',
-            },
-        },
-        msw: {
-            handlers: [specialHandlers.delayedResponse], // handlers.tsの遅延ハンドラーを使用
-        },
-    },
-};
-
-/**
- * Error: サーバーエラーのストーリー
- *
- * ■ 使用ハンドラー: errorHandlers.serverError
- * ■ HTTPステータス: 500 Internal Server Error
- * ■ 確認内容: エラーメッセージが適切に表示されるか
- *
- * APIサーバーで問題が発生した場合の挙動を確認します。
- * ユーザーに分かりやすいエラーメッセージが表示されることを確認してください。
- */
+// エラー状態
 export const Error: Story = {
     parameters: {
         docs: {
@@ -162,101 +70,12 @@ export const Error: Story = {
             },
         },
         msw: {
-            handlers: [errorHandlers.serverError], // 500エラーを返すハンドラー
+            handlers: [errorHandlers.serverError],
         },
     },
 };
 
-/**
- * NetworkError: ネットワークエラーのストーリー
- *
- * ■ 使用ハンドラー: errorHandlers.networkError
- * ■ 動作: ネットワークレベルのエラーをシミュレート
- * ■ 確認内容: オフライン時やネットワーク障害時の表示
- *
- * インターネット接続がない場合や、ネットワーク障害が発生した場合の
- * エラーハンドリングを確認します。
- */
-export const NetworkError: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: 'ネットワークエラー時の表示',
-            },
-        },
-        msw: {
-            handlers: [errorHandlers.networkError], // ネットワークエラーをシミュレート
-        },
-    },
-};
-
-/**
- * EmptyList: 空のリストのストーリー
- *
- * ■ 使用ハンドラー: specialHandlers.emptyResponse
- * ■ 返されるデータ: []（空の配列）
- * ■ HTTPステータス: 200 OK
- *
- * ユーザーが登録されていない場合の表示を確認します。
- * 「データがありません」のようなメッセージが表示されるべきです。
- */
-export const EmptyList: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: 'ユーザーが登録されていない場合の表示',
-            },
-        },
-        msw: {
-            handlers: [specialHandlers.emptyResponse], // 空の配列を返すハンドラー
-        },
-    },
-};
-
-/**
- * ManyUsers: 大量データのストーリー
- *
- * ■ 使用ハンドラー: インラインで定義
- * ■ 返されるデータ: 100人分のユーザーデータ
- * ■ 確認内容: パフォーマンスとスクロール動作
- *
- * ■ なぜインラインで定義するのか？
- * 100人分のデータは、パフォーマンステスト専用の特殊なケースです。
- * 実際のアプリケーションでは、ページネーションを使用するため、
- * このような大量データを一度に返すことはありません。
- */
-export const ManyUsers: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: '100人のユーザーを表示する例（パフォーマンステスト用）',
-            },
-        },
-        msw: {
-            handlers: [
-                http.get('/api/users', () => {
-                    // プログラム的に100人分のデータを生成
-                    const manyUsers = Array.from({length: 100}, (_, i) => ({
-                        id: i + 1,
-                        name: `ユーザー ${i + 1}`,
-                        email: `user${i + 1}@example.com`,
-                    }));
-                    return HttpResponse.json(manyUsers);
-                }),
-            ],
-        },
-    },
-};
-
-/**
- * Responsive: レスポンシブ確認用のストーリー
- *
- * ■ 使用ハンドラー: defaultHandlers
- * ■ 特徴: ビューポート設定により、異なる画面サイズでの表示を確認
- *
- * モバイル、タブレット、デスクトップの各画面サイズで
- * コンポーネントが適切に表示されることを確認します。
- */
+// レスポンシブデザインの確認
 export const Responsive: Story = {
     parameters: {
         docs: {
@@ -267,8 +86,6 @@ export const Responsive: Story = {
         msw: {
             handlers: defaultHandlers,
         },
-        // Storybookのビューポート設定
-        // 画面上部のツールバーから画面サイズを切り替えられます
         viewport: {
             viewports: {
                 mobile: {
@@ -293,20 +110,22 @@ export const Responsive: Story = {
                     },
                 },
             },
-            defaultViewport: 'mobile', // デフォルトはモバイル表示
+            defaultViewport: 'mobile',
         },
     },
+    // Tailwindのレスポンシブクラスを使用
+    decorators: [
+        (Story) => (
+            <div className="w-full px-4 sm:px-6 lg:px-8">
+                <div className="mx-auto max-w-sm sm:max-w-md lg:max-w-2xl">
+                    <Story/>
+                </div>
+            </div>
+        ),
+    ],
 };
 
-/**
- * DarkMode: ダークモードでの表示確認
- *
- * ■ 使用ハンドラー: defaultHandlers
- * ■ 特徴: ダークモード用のスタイルを適用
- *
- * ダークモードでもコンポーネントが読みやすく表示されることを確認します。
- * テキストのコントラストやカードの背景色などに注目してください。
- */
+// ダークモード対応
 export const DarkMode: Story = {
     parameters: {
         docs: {
@@ -317,7 +136,6 @@ export const DarkMode: Story = {
         msw: {
             handlers: defaultHandlers,
         },
-        // 背景色の設定
         backgrounds: {
             default: 'dark',
             values: [
@@ -326,47 +144,76 @@ export const DarkMode: Story = {
             ],
         },
     },
-    // デコレーターでダークモードのクラスと背景を適用
+    // Tailwindのダークモードクラスを使用
     decorators: [
         (Story) => (
-            <div
-                className='dark'
-                style={{
-                    backgroundColor: '#1a1a1a',
-                    padding: '20px',
-                    minHeight: '400px',
-                }}
-            >
-                <Story/>
+            <div className="dark min-h-[400px] bg-background p-6">
+                <div className="mx-auto max-w-2xl">
+                    <Story/>
+                </div>
             </div>
         ),
     ],
 };
 
-/**
- * ■ MSWのデバッグ方法
- *
- * 1. ブラウザの開発者ツールのコンソールを開く
- * 2. 以下のメッセージを確認：
- *    - "[MSW] Mocking enabled." → MSWが有効化されている
- *    - "[MSW] 200 GET /api/users" → リクエストがインターセプトされた
- *
- * 3. ネットワークタブで確認：
- *    - リクエストは実際には送信されない
- *    - Service Workerによってインターセプトされる
- *
- * ■ よくある問題と解決方法
- *
- * 1. "Failed to fetch users"エラー
- *    → msw-storybook-addonがインストールされていない
- *    → public/mockServiceWorker.jsが存在しない
- *
- * 2. データが表示されない
- *    → ハンドラーのパスが間違っている（/api/users vs /api/user）
- *    → ハンドラーが正しく登録されていない
- *
- * 3. 古いデータが表示される
- *    → ブラウザのキャッシュをクリア
- *    → Service Workerを更新（開発者ツール > Application > Service Workers）
- */
+// カスタムテーマの例
+export const CustomTheme: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: 'カスタムテーマカラーを使用した表示例',
+            },
+        },
+        msw: {
+            handlers: defaultHandlers,
+        },
+    },
+    decorators: [
+        (Story) => (
+            <div className="bg-gradient-to-br from-primary/10 to-secondary/10 p-8 rounded-lg">
+                <div className="max-w-2xl mx-auto bg-card rounded-lg shadow-lg p-6">
+                    <h2 className="text-2xl font-bold text-primary mb-4">ユーザー管理</h2>
+                    <Story/>
+                </div>
+            </div>
+        ),
+    ],
+};
 
+
+// 大量データ表示（スクロール対応）
+export const ManyUsers: Story = {
+    parameters: {
+        docs: {
+            description: {
+                story: '100人のユーザーを表示する例（スクロール確認用）',
+            },
+        },
+        msw: {
+            handlers: [
+                http.get('/api/users', () => {
+                    const manyUsers = Array.from({length: 100}, (_, i) => ({
+                        id: i + 1,
+                        name: `ユーザー ${i + 1}`,
+                        email: `user${i + 1}@example.com`,
+                    }));
+                    return HttpResponse.json(manyUsers);
+                }),
+            ],
+        },
+    },
+    decorators: [
+        (Story) => (
+            <div className="max-w-4xl mx-auto">
+                <div className="bg-card border border-border rounded-lg shadow-sm">
+                    <div className="sticky top-0 bg-card border-b border-border p-4 z-10">
+                        <h2 className="text-xl font-semibold">ユーザー一覧（100件）</h2>
+                    </div>
+                    <div className="max-h-[600px] overflow-y-auto p-4">
+                        <Story/>
+                    </div>
+                </div>
+            </div>
+        ),
+    ],
+};
