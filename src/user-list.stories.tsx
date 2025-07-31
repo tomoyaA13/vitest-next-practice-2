@@ -1,7 +1,8 @@
 import {Meta, StoryObj} from "@storybook/nextjs-vite";
 import {delay, http, HttpResponse} from 'msw';
 import {UserList} from "@/components/user-list";
-import {errorHandlers, handlers as defaultHandlers, mockUsers, specialHandlers} from '../src/mocks/handlers'
+import {errorHandlers, handlers as defaultHandlers, mockUsers, specialHandlers} from '../src/mocks/handlers';
+import {expect, within, userEvent, waitFor} from 'storybook/test';
 
 const meta = {
     title: 'components/user-list',
@@ -40,6 +41,27 @@ export const Default: Story = {
             handlers: defaultHandlers
         },
     },
+    play: async ({ canvas, step }) => {
+        // ローディング状態の確認
+        await step('ローディング中のスケルトンが表示される', async () => {
+            const skeletons = canvas.getAllByRole('status');
+            await expect(skeletons).toHaveLength(3);
+        });
+
+        // データ取得後の確認
+        await step('ユーザーデータが表示される', async () => {
+            // ユーザー名が表示されるまで待機
+            await waitFor(async () => {
+                await expect(canvas.getByText('山田太郎')).toBeInTheDocument();
+            });
+
+            // 全ユーザーの情報が表示されていることを確認
+            await expect(canvas.getByText('山田太郎')).toBeInTheDocument();
+            await expect(canvas.getByText('yamada@example.com')).toBeInTheDocument();
+            await expect(canvas.getByText('鈴木花子')).toBeInTheDocument();
+            await expect(canvas.getByText('suzuki@example.com')).toBeInTheDocument();
+        });
+    },
 };
 
 // ローディング状態
@@ -59,6 +81,16 @@ export const Loading: Story = {
             ],
         },
     },
+    play: async ({ canvas }) => {
+        // スケルトンローダーが表示されていることを確認
+        const skeletons = canvas.getAllByRole('status');
+        await expect(skeletons).toHaveLength(3);
+        
+        // 各スケルトンが適切なクラスを持っていることを確認
+        skeletons.forEach((skeleton) => {
+            expect(skeleton).toHaveClass('h-20', 'w-full');
+        });
+    },
 };
 
 // エラー状態
@@ -72,6 +104,20 @@ export const Error: Story = {
         msw: {
             handlers: [errorHandlers.serverError],
         },
+    },
+    play: async ({ canvas, step }) => {
+        await step('エラーメッセージが表示される', async () => {
+            // エラーメッセージが表示されるまで待機
+            await waitFor(async () => {
+                const errorMessage = canvas.getByText(/エラー:/);
+                await expect(errorMessage).toBeInTheDocument();
+            });
+
+            // エラーメッセージの内容を確認
+            const errorMessage = canvas.getByText(/エラー:/);
+            await expect(errorMessage).toHaveClass('text-red-500');
+            await expect(errorMessage).toHaveTextContent('エラー: Failed to fetch users');
+        });
     },
 };
 
@@ -123,6 +169,16 @@ export const Responsive: Story = {
             </div>
         ),
     ],
+    play: async ({ canvas }) => {
+        // データが表示されるまで待機
+        await waitFor(async () => {
+            await expect(canvas.getByText('山田太郎')).toBeInTheDocument();
+        });
+
+        // モバイルビューでも全ての要素が表示されていることを確認
+        await expect(canvas.getByText('山田太郎')).toBeVisible();
+        await expect(canvas.getByText('鈴木花子')).toBeVisible();
+    },
 };
 
 // ダークモード対応
@@ -154,6 +210,16 @@ export const DarkMode: Story = {
             </div>
         ),
     ],
+    play: async ({ canvas }) => {
+        // データが表示されるまで待機
+        await waitFor(async () => {
+            await expect(canvas.getByText('山田太郎')).toBeInTheDocument();
+        });
+
+        // ダークモードでも読みやすく表示されていることを確認
+        const container = canvas.getByRole('region').parentElement;
+        await expect(container).toHaveClass('dark');
+    },
 };
 
 // カスタムテーマの例
@@ -178,6 +244,17 @@ export const CustomTheme: Story = {
             </div>
         ),
     ],
+    play: async ({ canvas }) => {
+        // カスタムヘッダーが表示されていることを確認
+        const header = canvas.getByText('ユーザー管理');
+        await expect(header).toBeInTheDocument();
+        await expect(header).toHaveClass('text-2xl', 'font-bold', 'text-primary');
+
+        // ユーザーデータが表示されるまで待機
+        await waitFor(async () => {
+            await expect(canvas.getByText('山田太郎')).toBeInTheDocument();
+        });
+    },
 };
 
 
@@ -209,11 +286,44 @@ export const ManyUsers: Story = {
                     <div className="sticky top-0 bg-card border-b border-border p-4 z-10">
                         <h2 className="text-xl font-semibold">ユーザー一覧（100件）</h2>
                     </div>
-                    <div className="max-h-[600px] overflow-y-auto p-4">
+                    <div className="max-h-[600px] overflow-y-auto p-4" data-testid="user-list-container">
                         <Story/>
                     </div>
                 </div>
             </div>
         ),
     ],
+    play: async ({ canvas, step }) => {
+        await step('大量のユーザーデータが表示される', async () => {
+            // 最初のユーザーが表示されるまで待機
+            await waitFor(async () => {
+                await expect(canvas.getByText('ユーザー 1')).toBeInTheDocument();
+            });
+
+            // 100人分のユーザーが存在することを確認
+            const userCards = canvas.getAllByRole('article');
+            await expect(userCards).toHaveLength(100);
+        });
+
+        await step('スクロール可能なコンテナであることを確認', async () => {
+            const container = canvas.getByTestId('user-list-container');
+            const scrollHeight = container.scrollHeight;
+            const clientHeight = container.clientHeight;
+            
+            // スクロールが必要な高さであることを確認
+            await expect(scrollHeight).toBeGreaterThan(clientHeight);
+        });
+
+        await step('最後のユーザーまでスクロール', async () => {
+            const container = canvas.getByTestId('user-list-container');
+            
+            // 最後までスクロール
+            container.scrollTop = container.scrollHeight;
+            
+            // 最後のユーザーが表示されていることを確認
+            await waitFor(async () => {
+                await expect(canvas.getByText('ユーザー 100')).toBeInTheDocument();
+            });
+        });
+    },
 };
