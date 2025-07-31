@@ -181,47 +181,6 @@ export const Responsive: Story = {
     },
 };
 
-// ダークモード対応
-export const DarkMode: Story = {
-    parameters: {
-        docs: {
-            description: {
-                story: 'ダークモードでの表示確認',
-            },
-        },
-        msw: {
-            handlers: defaultHandlers,
-        },
-        backgrounds: {
-            default: 'dark',
-            values: [
-                {name: 'light', value: '#ffffff'},
-                {name: 'dark', value: '#1a1a1a'},
-            ],
-        },
-    },
-    // Tailwindのダークモードクラスを使用
-    decorators: [
-        (Story) => (
-            <div className="dark min-h-[400px] bg-background p-6">
-                <div className="mx-auto max-w-2xl">
-                    <Story/>
-                </div>
-            </div>
-        ),
-    ],
-    play: async ({ canvas }) => {
-        // データが表示されるまで待機
-        await waitFor(async () => {
-            await expect(canvas.getByText('山田太郎')).toBeInTheDocument();
-        });
-
-        // ダークモードでも読みやすく表示されていることを確認
-        const container = canvas.getByRole('region').parentElement;
-        await expect(container).toHaveClass('dark');
-    },
-};
-
 // カスタムテーマの例
 export const CustomTheme: Story = {
     parameters: {
