@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+.env.*
 
 # vercel
 .vercel
@@ -49,3 +50,4 @@ node_modules/
 
 *storybook.log
 storybook-static
+
