@@ -1,5 +1,14 @@
 import type { Preview } from '@storybook/nextjs-vite'
 import "../src/app/globals.css" // tailwind を使えるようにする (https://zenn.dev/masatotezuka/articles/strorybook_nextjs_beginner#%E7%92%B0%E5%A2%83%E6%A7%8B%E7%AF%89)
+import { initialize, mswLoader } from 'msw-storybook-addon';
+
+// https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-network-requests
+/*
+ * Initializes MSW
+ * See https://github.com/mswjs/msw-storybook-addon#configuring-msw
+ * to learn how to customize it
+ */
+initialize();
 
 const preview: Preview = {
   parameters: {
@@ -17,6 +26,8 @@ const preview: Preview = {
       test: 'todo'
     }
   },
+  // https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-network-requests
+  loaders: [mswLoader], // 👈 Add the MSW loader to all stories
 };
 
 export default preview;

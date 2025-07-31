@@ -75,7 +75,7 @@ import {Meta, StoryObj} from "@storybook/nextjs-vite";
  * - 送信時にコールバックを実行する
  */
 const meta = {
-    title: 'Components/LoginForm',
+    title: 'components/form/login-form',
     component: LoginForm,
     parameters: {
         layout: 'centered', // フォームを中央に配置
