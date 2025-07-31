@@ -14,24 +14,14 @@
  * - テストとStorybookで同じモックデータを使用することで一貫性を保つ
  * - ハンドラーの変更が必要な場合、一箇所（handlers.ts）を修正するだけで済む
  * - チーム全体で同じモックデータを共有できる
+ *
+ * https://storybook.js.org/docs/writing-stories/mocking-data-and-modules/mocking-network-requests
  */
 
 import {Meta, StoryObj} from "@storybook/nextjs-vite";
 import {delay, http, HttpResponse} from 'msw';
 import {UserList} from "@/components/user-list";
 import {errorHandlers, handlers as defaultHandlers, mockUsers, specialHandlers} from '../src/mocks/handlers'
-
-/**
- * 既存のMSWハンドラーをインポート
- *
- * ■ handlers.tsの構成：
- * - handlers: デフォルトのAPIハンドラー（基本的な成功レスポンス）
- * - errorHandlers: エラーレスポンスのハンドラー（500エラー、ネットワークエラーなど）
- * - specialHandlers: 特殊なケース用のハンドラー（空のレスポンス、遅延レスポンスなど）
- * - mockUsers: デフォルトのモックユーザーデータ（山田太郎、鈴木花子）
- * - mswMockUsers: 別のモックユーザーデータ（佐藤次郎、田中美咲、高橋健一）
- */
-
 
 /**
  * ■ Metaオブジェクトの設定
